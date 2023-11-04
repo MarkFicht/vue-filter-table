@@ -4,7 +4,7 @@ Developing with Vue 3 in Vite.
 
 -   Responsive app
 -   Table with filter.
--   Info pop up
+-   Info popup
 -   TypeScript on board
 -   Service class
 -   Tested on <b>Chrome browser</b>

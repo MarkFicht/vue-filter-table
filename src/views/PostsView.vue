@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, type Ref } from 'vue';
+import { onMounted, ref, type Ref, watch } from 'vue';
 import { getAllUsers, getAllPosts, getPostsByAuthor } from '@/service/postsService';
 import type { IUser } from '@/interfaces/IUser';
 import type { IPosts } from '@/interfaces/IPosts';
@@ -7,11 +7,16 @@ import LoadingSpinner from '@/components/LoadingSpinner.vue';
 
 const header: Ref<string> = ref('Posts');
 const labelAuthors: Ref<string> = ref('Authors:');
+const labelButtonClose: Ref<string> = ref('Close');
+const infoPopup: Ref<string> = ref('Info popup');
+
+const select = ref(null);
 
 const users = ref<IUser[]>([]);
 const posts = ref<IPosts[]>([]);
 
 const isLoading = ref<boolean>(false);
+const showPopup = ref<boolean>(false);
 
 const defaultSelected = ref<string>('All');
 const selected = ref<Partial<IUser>>({});
@@ -25,8 +30,6 @@ onMounted(async () => {
     await getAllPosts()
         .then((res) => (posts.value = res))
         .catch((e) => new Error(e.message));
-
-    console.log('%c ttt -> ', 'background: #222; color: #bada55', await getPostsByAuthor(2));
 
     selectOptions.value = [
         {
@@ -43,6 +46,24 @@ onMounted(async () => {
 
     isLoading.value = false;
 });
+
+watch(
+    () => selected.value,
+    async (newVal: Partial<IUser>) => {
+        isLoading.value = true;
+
+        if (newVal.id === 0)
+            await getAllPosts()
+                .then((res) => (posts.value = res))
+                .catch((e) => new Error(e.message));
+        else if (newVal.id)
+            await getPostsByAuthor(newVal.id)
+                .then((res) => (posts.value = res))
+                .catch((e) => new Error(e.message));
+
+        isLoading.value = false;
+    }
+);
 </script>
 
 <template>
@@ -53,12 +74,17 @@ onMounted(async () => {
 
         <section class="select filter">
             <label for="filter">{{ labelAuthors }}</label>
-            <select v-model="selected" id="filter">
-                <option v-for="option in selectOptions" :key="option.id" :value="option">
+            <select v-model="selected" ref="select" id="filter">
+                <option
+                    v-for="option in selectOptions"
+                    :key="option.id"
+                    :value="option"
+                    :class="[option.id === selected.id && 'selectedOption']"
+                >
                     {{ option.name }}
                 </option>
             </select>
-            <div class="select_arrow"></div>
+            <div class="selectArrow"></div>
         </section>
 
         <section class="posts">
@@ -75,6 +101,20 @@ onMounted(async () => {
                     <p class="postContent">{{ post.body }}</p>
                 </li>
             </ul>
+        </section>
+
+        <section class="infoButton">
+            <button @click="() => (showPopup = true)">I</button>
+        </section>
+
+        <section v-if="showPopup" class="infoPopupContainer">
+            <section class="popupContent">
+                <img class="popupImg" src="../assets/bg-min.jpg" alt="Mountain background" />
+                <p class="popupDesc">{{ infoPopup }}</p>
+                <button class="popupButton" @click="() => (showPopup = false)">
+                    {{ labelButtonClose }}
+                </button>
+            </section>
         </section>
 
         <LoadingSpinner class="loadingContainer" v-if="isLoading" />
@@ -96,9 +136,12 @@ onMounted(async () => {
         'head gap aut '
         'post gap aut ';
 }
+/* --- Loading --- */
 .loadingContainer {
     position: absolute;
 }
+
+/* --- Header of view --- */
 .header {
     grid-area: head;
     height: 50px;
@@ -111,6 +154,7 @@ h1 {
     font-weight: bold;
 }
 
+/* --- Posts --- */
 .posts {
     grid-area: post;
     width: 100%;
@@ -142,6 +186,7 @@ li > h2::first-letter {
     font-size: 1.1em;
 }
 
+/* --- Select-box --- */
 .filter {
     position: relative;
     grid-area: aut;
@@ -168,38 +213,129 @@ li > h2::first-letter {
     border-radius: 0px;
     font-size: 1.6em;
     border: 3px solid var(--color-text);
-    color: var(--color-background-container);
-    background: var(--color-text);
+    /* color: var(--color-background-container);
+    background: var(--color-text); */
+    color: var(--color-text);
+    background: var(--color-background-container);
+    transition: 0.3s all;
     appearance: none;
     -webkit-appearance: none;
     -moz-appearance: none;
 }
+.filter select:focus {
+    background: var(--color-text);
+    color: var(--color-background-container);
+}
 .filter select::-ms-expand {
     display: none;
 }
-.filter select:hover,
+/* .filter select:hover,
 .filter select:focus {
     transition: 0.3s all;
     background: #666;
+} */
+
+option:checked,
+option:active,
+option:hover,
+.selectedOption {
+    height: 100px;
+    font-weight: bold;
+    background-color: red;
 }
-.filter select:disabled {
-    opacity: 0.5;
-    pointer-events: none;
-}
-.select_arrow {
+.selectArrow {
     position: absolute;
     top: 24px;
     right: 15px;
     pointer-events: none;
     border-style: solid;
     border-width: 12px 15px 0px 15px;
-    border-color: var(--color-background-container) transparent transparent transparent;
+    border-color: var(--color-text) transparent transparent transparent;
+    transition: 0.3s all;
 }
-.filter select:hover ~ .select_arrow,
-.filter select:focus ~ .select_arrow {
-    border-top-color: #000000;
+.filter select:focus ~ .selectArrow {
+    border-top-color: var(--color-background-container);
+    transform: rotate(180deg);
 }
-.filter select:disabled ~ .select_arrow {
-    border-top-color: #cccccc;
+
+.filter option {
+    background-color: rebeccapurple;
+    border: 3px solid var(--color-text);
+    width: 100%;
+    height: 58px;
+    display: flex;
+}
+
+/* --- Info button --- */
+.infoButton {
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    bottom: 30px;
+    right: 30px;
+}
+.infoButton > button {
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    border: 3px solid var(--color-text);
+    outline: none;
+    cursor: pointer;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* --- Popup --- */
+.infoPopupContainer {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.15);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.popupContent {
+    width: 60%;
+    height: 60%;
+    border: 3px solid var(--color-text);
+    background-color: var(--color-background-container);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+.popupImg {
+    width: 65%;
+    height: 50%;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+.popupDesc {
+    height: 100px;
+    line-height: 100px;
+    font-size: 1.5em;
+    font-weight: bold;
+    width: 100%;
+    text-align: center;
+    color: var(--color-text);
+}
+.popupButton {
+    outline: none;
+    border: 3px solid var(--color-text);
+    background-color: var(--color-background-container);
+    color: var(--color-text);
+    height: 60px;
+    line-height: 55px;
+    width: 50%;
+    font-size: 1.5em;
+    font-weight: bold;
+    color: var(--color-text);
+    cursor: pointer;
+    margin-bottom: 20px;
 }
 </style>
