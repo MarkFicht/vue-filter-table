@@ -4,6 +4,7 @@ import { getAllUsers, getAllPosts, getPostsByAuthor } from '@/service/postsServi
 import type { IUser } from '@/interfaces/IUser';
 import type { IPosts } from '@/interfaces/IPosts';
 import LoadingSpinner from '@/components/LoadingSpinner.vue';
+import ComboBoxComponent from '@/components/ComboBoxComponent.vue';
 
 const header: Ref<string> = ref('Posts');
 const labelAuthors: Ref<string> = ref('Authors:');
@@ -44,6 +45,61 @@ onMounted(async () => {
 
     selected.value = selectOptions.value[0];
 
+    // ---
+    const selectTag = document.getElementById('filter');
+    console.log('%c selectTag -> ', 'background: #222; color: #bada55', selectTag?.children);
+    // $('select').each(function(){
+    //     var $this = $(this), numberOfOptions = $(this).children('option').length;
+
+    //     $this.addClass('select-hidden');
+    //     $this.wrap('<div class="select"></div>');
+    //     $this.after('<div class="select-styled"></div>');
+
+    //     var $styledSelect = $this.next('div.select-styled');
+    //     $styledSelect.text($this.children('option').eq(0).text());
+
+    //     var $list = $('<ul />', {
+    //         'class': 'select-options'
+    //     }).insertAfter($styledSelect);
+
+    //     for (var i = 0; i < numberOfOptions; i++) {
+    //         $('<li />', {
+    //             text: $this.children('option').eq(i).text(),
+    //             rel: $this.children('option').eq(i).val()
+    //         }).appendTo($list);
+    //         if ($this.children('option').eq(i).is(':selected')){
+    //           $('li[rel="' + $this.children('option').eq(i).val() + '"]').addClass('is-selected')
+    //         }
+    //     }
+
+    //     var $listItems = $list.children('li');
+
+    //     $styledSelect.click(function(e) {
+    //         e.stopPropagation();
+    //         $('div.select-styled.active').not(this).each(function(){
+    //             $(this).removeClass('active').next('ul.select-options').hide();
+    //         });
+    //         $(this).toggleClass('active').next('ul.select-options').toggle();
+    //     });
+
+    //     $listItems.click(function(e) {
+    //         e.stopPropagation();
+    //         $styledSelect.text($(this).text()).removeClass('active');
+    //         $this.val($(this).attr('rel'));
+    //       $list.find('li.is-selected').removeClass('is-selected');
+    //       $list.find('li[rel="' + $(this).attr('rel') + '"]').addClass('is-selected');
+    //         $list.hide();
+    //         //console.log($this.val());
+    //     });
+
+    //     $(document).click(function() {
+    //         $styledSelect.removeClass('active');
+    //         $list.hide();
+    //     });
+
+    // });
+    // ---
+
     isLoading.value = false;
 });
 
@@ -73,7 +129,14 @@ watch(
         </header>
 
         <section class="select filter">
-            <label for="filter">{{ labelAuthors }}</label>
+            <ComboBoxComponent
+                v-if="selectOptions.length > 0"
+                :options="selectOptions"
+                :selected="selectOptions[0]"
+                :label="labelAuthors"
+            />
+
+            <!-- <label for="filter">{{ labelAuthors }}</label>
             <select v-model="selected" ref="select" id="filter">
                 <option
                     v-for="option in selectOptions"
@@ -84,7 +147,7 @@ watch(
                     {{ option.name }}
                 </option>
             </select>
-            <div class="selectArrow"></div>
+            <div class="selectArrow"></div> -->
         </section>
 
         <section class="posts">
@@ -188,82 +251,7 @@ li > h2::first-letter {
 
 /* --- Select-box --- */
 .filter {
-    position: relative;
     grid-area: aut;
-    width: 100%;
-    height: 58px;
-    line-height: 58px;
-    margin: 0;
-    padding: 0;
-    font-size: 1em;
-    font-weight: bold;
-}
-.filter > label {
-    position: absolute;
-    font-size: 1.6em;
-    top: -50px;
-}
-.filter select {
-    width: 100%;
-    height: 58px;
-    display: inline-block;
-    cursor: pointer;
-    padding: 10px 15px;
-    outline: 0;
-    border-radius: 0px;
-    font-size: 1.6em;
-    border: 3px solid var(--color-text);
-    /* color: var(--color-background-container);
-    background: var(--color-text); */
-    color: var(--color-text);
-    background: var(--color-background-container);
-    transition: 0.3s all;
-    appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-}
-.filter select:focus {
-    background: var(--color-text);
-    color: var(--color-background-container);
-}
-.filter select::-ms-expand {
-    display: none;
-}
-/* .filter select:hover,
-.filter select:focus {
-    transition: 0.3s all;
-    background: #666;
-} */
-
-option:checked,
-option:active,
-option:hover,
-.selectedOption {
-    height: 100px;
-    font-weight: bold;
-    background-color: red;
-}
-.selectArrow {
-    position: absolute;
-    top: 24px;
-    right: 15px;
-    pointer-events: none;
-    border-style: solid;
-    border-width: 12px 15px 0px 15px;
-    border-color: var(--color-text) transparent transparent transparent;
-    transition: 0.3s all;
-}
-.filter select:focus ~ .selectArrow {
-    border-top-color: var(--color-background-container);
-    transform: rotate(180deg);
-}
-
-.filter option {
-    background-color: rebeccapurple;
-    border: 3px solid var(--color-text);
-    width: 100%;
-    height: 58px;
-    display: flex;
 }
 
 /* --- Info button --- */
