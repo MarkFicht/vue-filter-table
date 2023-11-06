@@ -4,10 +4,11 @@ Developing with Vue 3 in Vite.
 
 -   Responsive app
 -   Table with filter.
+-   WCAG 2.2 for component `ComboBoxComponent`
 -   Info popup
 -   TypeScript on board
 -   Service class
--   Tested on <b>Chrome browser</b>
+-   Tested on <b>`Chrome browser`</b>
 
 ## DEMO
 
@@ -19,4 +20,4 @@ Developing with Vue 3 in Vite.
 
 ## Status
 
-Recruitment task: <b>In progress</b>
+Recruitment task: <b>Done</b>

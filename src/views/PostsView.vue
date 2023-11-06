@@ -5,13 +5,14 @@ import type { IUser } from '@/interfaces/IUser';
 import type { IPosts } from '@/interfaces/IPosts';
 import LoadingSpinner from '@/components/LoadingSpinner.vue';
 import ComboBoxComponent from '@/components/ComboBoxComponent.vue';
+import { useRoute } from 'vue-router';
+
+const route = useRoute();
 
 const header: Ref<string> = ref('Posts');
 const labelAuthors: Ref<string> = ref('Authors:');
 const labelButtonClose: Ref<string> = ref('Close');
 const infoPopup: Ref<string> = ref('Info popup');
-
-const select = ref(null);
 
 const users = ref<IUser[]>([]);
 const posts = ref<IPosts[]>([]);
@@ -19,24 +20,44 @@ const posts = ref<IPosts[]>([]);
 const isLoading = ref<boolean>(false);
 const showPopup = ref<boolean>(false);
 
-const defaultSelected = ref<string>('All');
+const labelSelectAll = ref<string>('All');
 const selected = ref<Partial<IUser>>({});
 const selectOptions = ref<Partial<IUser>[]>([]);
+
+const firstLoad = ref<boolean>(true);
 
 onMounted(async () => {
     isLoading.value = true;
     await getAllUsers()
         .then((res) => (users.value = res))
         .catch((e) => new Error(e.message));
-    await getAllPosts()
-        .then((res) => (posts.value = res))
-        .catch((e) => new Error(e.message));
+
+    const id = Number(route.params.id);
+    if (!isNaN(id) && id > 0) {
+        await getPostsByAuthor(id)
+            .then(async (res) => {
+                if (res?.length === 0) {
+                    await getAllPosts()
+                        .then((res) => (posts.value = res))
+                        .catch((e) => new Error(e.message));
+                } else posts.value = res;
+            })
+            .catch(async (e) => {
+                await getAllPosts()
+                    .then((res) => (posts.value = res))
+                    .catch((e) => new Error(e.message));
+            });
+    } else {
+        await getAllPosts()
+            .then((res) => (posts.value = res))
+            .catch((e) => new Error(e.message));
+    }
 
     selectOptions.value = [
         {
             id: 0,
-            name: defaultSelected.value,
-            username: defaultSelected.value
+            name: labelSelectAll.value,
+            username: labelSelectAll.value
         }
     ];
     users.value.forEach(({ id, name, username }) => {
@@ -45,67 +66,17 @@ onMounted(async () => {
 
     selected.value = selectOptions.value[0];
 
-    // ---
-    const selectTag = document.getElementById('filter');
-    console.log('%c selectTag -> ', 'background: #222; color: #bada55', selectTag?.children);
-    // $('select').each(function(){
-    //     var $this = $(this), numberOfOptions = $(this).children('option').length;
-
-    //     $this.addClass('select-hidden');
-    //     $this.wrap('<div class="select"></div>');
-    //     $this.after('<div class="select-styled"></div>');
-
-    //     var $styledSelect = $this.next('div.select-styled');
-    //     $styledSelect.text($this.children('option').eq(0).text());
-
-    //     var $list = $('<ul />', {
-    //         'class': 'select-options'
-    //     }).insertAfter($styledSelect);
-
-    //     for (var i = 0; i < numberOfOptions; i++) {
-    //         $('<li />', {
-    //             text: $this.children('option').eq(i).text(),
-    //             rel: $this.children('option').eq(i).val()
-    //         }).appendTo($list);
-    //         if ($this.children('option').eq(i).is(':selected')){
-    //           $('li[rel="' + $this.children('option').eq(i).val() + '"]').addClass('is-selected')
-    //         }
-    //     }
-
-    //     var $listItems = $list.children('li');
-
-    //     $styledSelect.click(function(e) {
-    //         e.stopPropagation();
-    //         $('div.select-styled.active').not(this).each(function(){
-    //             $(this).removeClass('active').next('ul.select-options').hide();
-    //         });
-    //         $(this).toggleClass('active').next('ul.select-options').toggle();
-    //     });
-
-    //     $listItems.click(function(e) {
-    //         e.stopPropagation();
-    //         $styledSelect.text($(this).text()).removeClass('active');
-    //         $this.val($(this).attr('rel'));
-    //       $list.find('li.is-selected').removeClass('is-selected');
-    //       $list.find('li[rel="' + $(this).attr('rel') + '"]').addClass('is-selected');
-    //         $list.hide();
-    //         //console.log($this.val());
-    //     });
-
-    //     $(document).click(function() {
-    //         $styledSelect.removeClass('active');
-    //         $list.hide();
-    //     });
-
-    // });
-    // ---
-
     isLoading.value = false;
 });
 
 watch(
     () => selected.value,
     async (newVal: Partial<IUser>) => {
+        if (firstLoad.value) {
+            firstLoad.value = false;
+            return;
+        }
+
         isLoading.value = true;
 
         if (newVal.id === 0)
@@ -120,6 +91,10 @@ watch(
         isLoading.value = false;
     }
 );
+
+function setSelected(option: Partial<IUser>): void {
+    (option.id || option.id === 0) && (selected.value = option);
+}
 </script>
 
 <template>
@@ -128,26 +103,14 @@ watch(
             <h1>{{ header }}</h1>
         </header>
 
-        <section class="select filter">
+        <section class="filter">
             <ComboBoxComponent
                 v-if="selectOptions.length > 0"
                 :options="selectOptions"
-                :selected="selectOptions[0]"
+                :selected="selected"
                 :label="labelAuthors"
+                @set-selected="setSelected"
             />
-
-            <!-- <label for="filter">{{ labelAuthors }}</label>
-            <select v-model="selected" ref="select" id="filter">
-                <option
-                    v-for="option in selectOptions"
-                    :key="option.id"
-                    :value="option"
-                    :class="[option.id === selected.id && 'selectedOption']"
-                >
-                    {{ option.name }}
-                </option>
-            </select>
-            <div class="selectArrow"></div> -->
         </section>
 
         <section class="posts">
@@ -155,7 +118,7 @@ watch(
                 <li v-for="post in posts" :key="post.id">
                     <h2 class="postHeader">{{ post.title }}</h2>
                     <p class="postAuthor">
-                        by
+                        {{ 'by' }}
                         <span>{{
                             selectOptions.find((option) => option.id === post.userId)?.name ||
                             post.id
@@ -167,7 +130,9 @@ watch(
         </section>
 
         <section class="infoButton">
-            <button @click="() => (showPopup = true)">I</button>
+            <button @click="() => (showPopup = true)">
+                <ion-icon name="information-outline"></ion-icon>
+            </button>
         </section>
 
         <section v-if="showPopup" class="infoPopupContainer">
@@ -246,7 +211,13 @@ li > h2::first-letter {
 .postContent {
     margin-top: 20px;
     padding-right: 40px;
-    font-size: 1.1em;
+    font-size: 1.2em;
+}
+.postAuthor > span {
+    font-weight: 700;
+}
+.postContent {
+    margin-top: 30px;
 }
 
 /* --- Select-box --- */
@@ -267,6 +238,7 @@ li > h2::first-letter {
     border-radius: 50%;
     width: 50px;
     height: 50px;
+    font-size: 30px;
     border: 3px solid var(--color-text);
     outline: none;
     cursor: pointer;
@@ -275,6 +247,10 @@ li > h2::first-letter {
     display: flex;
     justify-content: center;
     align-items: center;
+    transition: 0.3s all;
+}
+.infoButton > button:focus-visible {
+    border: 3px solid tomato;
 }
 
 /* --- Popup --- */
@@ -325,5 +301,266 @@ li > h2::first-letter {
     color: var(--color-text);
     cursor: pointer;
     margin-bottom: 20px;
+    transition: 0.3s all;
+}
+.popupButton:focus-visible {
+    border: 3px solid tomato;
+}
+
+@media (max-width: 1460px) {
+    .container {
+        --width: 1024px;
+        --height: 720px;
+        padding: 60px;
+        grid-template-columns: calc(var(--width) / 2) 1fr 300px;
+        grid-template-rows: 100px 1fr;
+    }
+
+    /* --- --- */
+    .header {
+        height: 40px;
+        line-height: 40px;
+    }
+    h1 {
+        font-size: 2.6em;
+    }
+
+    /* --- --- */
+    li {
+        margin-top: 50px;
+        margin-bottom: 20px;
+    }
+    li > h2 {
+        font-size: 1.9em;
+        padding-right: 20px;
+    }
+    .postAuthor,
+    .postContent {
+        margin-top: 20px;
+        font-size: 1.1em;
+    }
+    .postContent {
+        margin-top: 30px;
+    }
+    /* --- --- */
+    .infoButton {
+        width: 40px;
+        height: 40px;
+    }
+    .infoButton > button {
+        width: 40px;
+        height: 40px;
+        font-size: 24px;
+    }
+    /* --- --- */
+    .popupDesc {
+        height: 60px;
+        line-height: 60px;
+        font-size: 1.3em;
+    }
+    .popupButton {
+        height: 50px;
+        line-height: 45px;
+        font-size: 1.4em;
+        margin-bottom: 15px;
+    }
+}
+@media (max-width: 1044px) {
+    .container {
+        --width: 720px;
+        --height: 600px;
+        padding: 30px;
+        margin: 10px;
+        grid-template-columns: calc(var(--width) / 2) 1fr 240px;
+        grid-template-rows: 70px 1fr;
+    }
+
+    /* --- --- */
+    .header {
+        height: 30px;
+        line-height: 30px;
+    }
+    h1 {
+        padding-top: 10px;
+        font-size: 2.2em;
+    }
+
+    /* --- --- */
+    li {
+        margin-top: 35px;
+        margin-bottom: 20px;
+    }
+    li > h2 {
+        font-size: 1.8em;
+    }
+    .postAuthor,
+    .postContent {
+        margin-top: 15px;
+        font-size: 1.1em;
+    }
+    .postContent {
+        margin-top: 20px;
+    }
+    /* --- --- */
+    .infoButton {
+        width: 36px;
+        height: 36px;
+    }
+    .infoButton > button {
+        width: 36px;
+        height: 36px;
+        font-size: 24px;
+    }
+    /* --- --- */
+    .popupDesc {
+        height: 50px;
+        line-height: 50px;
+        font-size: 1.1em;
+    }
+    .popupButton {
+        height: 40px;
+        line-height: 35px;
+        font-size: 1.3em;
+        margin-bottom: 5px;
+    }
+}
+
+@media (max-width: 680px) {
+    .container {
+        --width: 560px;
+        --height: 600px;
+        padding: 20px;
+        margin: 10px;
+        grid-template-columns: var(--width);
+        grid-template-rows: 40px 40px 1fr;
+        grid-template-areas:
+            'head'
+            'aut '
+            'post';
+    }
+
+    /* --- --- */
+    .header {
+        height: 30px;
+        line-height: 30px;
+        width: calc(100% - 40px);
+    }
+    h1 {
+        padding-top: 0;
+        font-size: 1.9em;
+        width: calc(100% - 40px);
+    }
+
+    /* --- --- */
+    .posts {
+        width: calc(100% - 40px);
+        height: calc(100% - 40px);
+        margin-top: 20px;
+        margin-bottom: 20px;
+    }
+    li {
+        margin-top: 30px;
+        margin-bottom: 20px;
+    }
+    li > h2 {
+        font-size: 1.5em;
+    }
+    .postAuthor,
+    .postContent {
+        margin-top: 10px;
+        font-size: 1em;
+    }
+    .postContent {
+        margin-top: 15px;
+    }
+    /* --- --- */
+    .infoButton {
+        width: 30px;
+        height: 30px;
+        bottom: 20px;
+        right: 20px;
+    }
+    .infoButton > button {
+        width: 30px;
+        height: 30px;
+        font-size: 20px;
+    }
+    /* --- --- */
+    .popupContent {
+        width: 80%;
+        height: 65%;
+    }
+    .popupImg {
+        width: 70%;
+        height: 55%;
+    }
+    .popupDesc {
+        height: 40px;
+        line-height: 40px;
+        font-size: 1.1em;
+    }
+}
+
+@media (max-width: 600px) {
+    .container {
+        padding: 20px;
+        margin: 10px;
+        grid-template-columns: 1fr;
+        grid-template-rows: 40px 40px 1fr;
+        max-width: calc(100% - 40px);
+        max-height: calc(100vh - 20px);
+    }
+
+    /* --- --- */
+    .header {
+        width: 100%;
+    }
+    h1 {
+        font-size: 1.8em;
+        width: 100%;
+    }
+
+    /* --- --- */
+    .posts {
+        width: calc(100%);
+    }
+    li {
+        width: calc(100%);
+    }
+    li > h2 {
+        width: calc(100%);
+        font-size: 1.4em;
+    }
+    .postAuthor,
+    .postContent {
+        width: calc(100%);
+        font-size: 0.9em;
+    }
+    /* --- --- */
+    .infoButton {
+        width: 24px;
+        height: 24px;
+        bottom: 10px;
+        right: 10px;
+    }
+    .infoButton > button {
+        width: 24px;
+        height: 24px;
+        font-size: 16px;
+    }
+    /* --- --- */
+    .popupContent {
+        width: 80%;
+        height: 65%;
+    }
+    .popupImg {
+        width: 70%;
+        height: 55%;
+    }
+    .popupDesc {
+        height: 40px;
+        line-height: 40px;
+        font-size: 1em;
+    }
 }
 </style>

@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import PostsView from '@/views/PostsView.vue';
+import { RouterView } from 'vue-router';
 </script>
 
 <template>
-    <PostsView />
+    <RouterView />
 </template>
 
 <style scoped></style>

@@ -49,6 +49,7 @@ const props = defineProps<{
     selected?: Partial<IUser>;
     label: string;
 }>();
+const emit = defineEmits(['set-selected']);
 
 const selectedOption = ref(props.selected || props.options[0]);
 const focusedOptionIndex = ref(0);
@@ -67,6 +68,8 @@ const toggleOptions = () => {
 const selectOption = (option: Partial<IUser>, keyboardClick?: boolean) => {
     if (keyboardClick) selectedOption.value = props.options[focusedOptionIndex.value];
     else selectedOption.value = option;
+
+    emit('set-selected', selectedOption.value);
     optionsVisible.value = false;
 };
 
@@ -152,7 +155,7 @@ onUnmounted(() => {
     -webkit-appearance: none;
     -moz-appearance: none;
 }
-.comboBoxStyled:focus {
+.comboBoxStyled:focus-visible {
     border: 3px solid tomato;
 }
 
@@ -190,18 +193,137 @@ onUnmounted(() => {
     margin-top: 20px;
     border-top: 3px solid var(--color-text);
 }
-.selectOptions li:focus::before {
+.selectOptions li:focus-visible::before {
     position: absolute;
     content: '';
-    width: calc(100% + 6px);
-    height: calc(100% + 6px);
+    width: calc(100%);
+    height: calc(100%);
     display: block;
-    top: -3px;
-    left: -3px;
+    top: 0;
+    left: 0;
     border: 3px solid tomato;
 }
 .isSelectedOption {
     color: var(--color-background-container);
     background: var(--color-text);
+}
+
+@media (max-width: 1460px) {
+    .comboBoxLabel {
+        position: absolute;
+        font-size: 1.4em;
+        top: -30px;
+    }
+    .selectArrow {
+        top: 18px;
+        right: 18px;
+        border-width: 10px 12px 0px 12px;
+    }
+
+    /* --- --- */
+    .comboBoxStyled {
+        height: 46px;
+        line-height: 42px;
+        font-size: 1.3em;
+    }
+    .selectOptions li {
+        height: 46px;
+        line-height: 42px;
+        font-size: 1.4em;
+    }
+    .selectOptions li:first-child {
+        margin-top: 15px;
+    }
+}
+
+@media (max-width: 1044px) {
+    .comboBoxLabel {
+        position: absolute;
+        font-size: 1.1em;
+        top: -17px;
+    }
+    .selectArrow {
+        top: 21px;
+        right: 12px;
+        border-width: 8px 10px 0px 10px;
+    }
+
+    /* --- --- */
+    .comboBoxStyled {
+        height: 40px;
+        margin-top: 5px;
+        padding: 0 10px;
+        line-height: 38px;
+        font-size: 1em;
+    }
+    .selectOptions li {
+        height: 40px;
+        line-height: 36px;
+        font-size: 1em;
+    }
+    .selectOptions li:first-child {
+        margin-top: 12px;
+    }
+}
+
+@media (max-width: 680px) {
+    .comboBoxLabel {
+        display: none;
+    }
+    .selectArrow {
+        top: 21px;
+        right: 52px;
+        border-width: 8px 10px 0px 10px;
+    }
+
+    /* --- --- */
+    .comboBoxStyled {
+        height: 36px;
+        width: calc(100% - 40px);
+        padding: 0 10px;
+        line-height: 32px;
+        font-size: 1em;
+    }
+    .selectOptions {
+        width: calc(100% - 40px);
+    }
+    .selectOptions li {
+        height: 36px;
+        line-height: 32px;
+        font-size: 1em;
+    }
+    .selectOptions li:first-child {
+        margin-top: 12px;
+    }
+}
+
+@media (max-width: 600px) {
+    .selectArrow {
+        top: 17px;
+        right: 8px;
+        border-width: 6px 8px 0px 8px;
+    }
+
+    /* --- --- */
+    .comboBoxStyled {
+        width: calc(100%);
+        padding: 0 8px;
+        font-size: 0.9em;
+        height: 30px;
+        line-height: 26px;
+    }
+    .selectOptions {
+        width: calc(100%);
+    }
+    .selectOptions li {
+        height: 30px;
+        width: calc(100%);
+        line-height: 28px;
+        font-size: 0.9em;
+        padding: 0 8px;
+    }
+    .selectOptions li:first-child {
+        margin-top: 12px;
+    }
 }
 </style>
