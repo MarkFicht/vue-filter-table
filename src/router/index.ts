@@ -6,10 +6,16 @@ const router = createRouter({
     routes: [
         {
             path: '/',
+            redirect: { name: 'home' }
+        },
+        {
+            path: '/vue-filter-table/',
+            name: 'home',
             component: PostsView
         },
         {
-            path: '/:id',
+            path: '/vue-filter-table/:id',
+            name: 'home',
             component: PostsView
         },
         {
