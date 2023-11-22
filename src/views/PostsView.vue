@@ -114,8 +114,8 @@ function setSelected(option: Partial<IUser>): void {
         </section>
 
         <section class="posts">
-            <ul v-if="posts.length > 0">
-                <li v-for="post in posts" :key="post.id">
+            <article v-if="posts.length > 0">
+                <section v-for="post in posts" :key="post.id">
                     <h2 class="postHeader">{{ post.title }}</h2>
                     <p class="postAuthor">
                         {{ 'by' }}
@@ -125,8 +125,8 @@ function setSelected(option: Partial<IUser>): void {
                         }}</span>
                     </p>
                     <p class="postContent">{{ post.body }}</p>
-                </li>
-            </ul>
+                </section>
+            </article>
         </section>
 
         <section class="infoButton">
@@ -189,22 +189,22 @@ h1 {
     height: 100%;
     overflow-y: scroll;
 }
-ul {
+.posts article {
     list-style-type: none;
     margin: 0;
     padding: 0;
 }
-li {
+.posts article section {
     margin-top: 70px;
     margin-bottom: 30px;
 }
 
-li > h2 {
+.posts article section > h2 {
     font-size: 2.1em;
     font-weight: bold;
     padding-right: 20px;
 }
-li > h2::first-letter {
+.posts article section > h2::first-letter {
     text-transform: uppercase;
 }
 .postAuthor,
@@ -326,11 +326,11 @@ li > h2::first-letter {
     }
 
     /* --- --- */
-    li {
+    .posts article section {
         margin-top: 50px;
         margin-bottom: 20px;
     }
-    li > h2 {
+    .posts article section > h2 {
         font-size: 1.9em;
         padding-right: 20px;
     }
@@ -386,11 +386,11 @@ li > h2::first-letter {
     }
 
     /* --- --- */
-    li {
+    .posts article section {
         margin-top: 35px;
         margin-bottom: 20px;
     }
-    li > h2 {
+    .posts article section > h2 {
         font-size: 1.8em;
     }
     .postAuthor,
@@ -458,11 +458,11 @@ li > h2::first-letter {
         margin-top: 20px;
         margin-bottom: 20px;
     }
-    li {
+    .posts article section {
         margin-top: 30px;
         margin-bottom: 20px;
     }
-    li > h2 {
+    .posts article section > h2 {
         font-size: 1.5em;
     }
     .postAuthor,
@@ -524,10 +524,10 @@ li > h2::first-letter {
     .posts {
         width: calc(100%);
     }
-    li {
+    .posts article section {
         width: calc(100%);
     }
-    li > h2 {
+    .posts article section > h2 {
         width: calc(100%);
         font-size: 1.4em;
     }
